@@ -1,4 +1,6 @@
 from PIL import Image, ImageOps, ImageEnhance, ImageFilter, ImageChops
+import serial
+import time
 
 def main():
     
@@ -8,7 +10,20 @@ def main():
     image = image.filter(ImageFilter.FIND_EDGES)
     image = ImageChops.invert(image)
     image.save('imagef.jpg')
+    
+    nodeMCU = serial.Serial('/dev/ttyUSB0', 9600)
+    time.sleep(2)
 
+    while(1):
+        var=input()
+
+        if(var == '1'):
+            nodeMCU.write('1'.encode())
+            time.sleep(1)
+
+        if(var == '0'):
+            nodeMCU.write('0'.encode())
+            time.sleep(1)
 
 if __name__ == "__main__":
     main()
