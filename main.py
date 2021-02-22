@@ -7,11 +7,12 @@ def main():
     image = Image.open('test.jpg')
     image = image.convert("L")
     image = ImageOps.colorize(image, 'black', 'white', mid=None, blackpoint=0, whitepoint=255, midpoint = 127)
+    image = image.filter(ImageFilter.GaussianBlur(2))
     image = image.filter(ImageFilter.FIND_EDGES)
     image = ImageChops.invert(image)
     image.save('imagef.jpg')
     
-    nodeMCU = serial.Serial('/dev/ttyUSB0', 9600)
+    '''nodeMCU = serial.Serial('/dev/ttyUSB0', 9600)
     time.sleep(2)
 
     while(1):
@@ -23,7 +24,7 @@ def main():
 
         if(var == '0'):
             nodeMCU.write('0'.encode())
-            time.sleep(1)
+            time.sleep(1)'''
 
 if __name__ == "__main__":
     main()
