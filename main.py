@@ -6,19 +6,16 @@ import cv2
 
 def main():
 
-    image = Image.open('test.png')
-    width, height = image.size
-    image = image.convert("L")
-    image = ImageOps.colorize(image, 'black', 'white', mid=None, blackpoint=0, whitepoint=255, midpoint = 127)
-    image = image.filter(ImageFilter.GaussianBlur(2))
-    image = image.filter(ImageFilter.FIND_EDGES)
-    image = ImageChops.invert(image)
-    image.save('imagef.jpg')
-    temp = cv2.imread('test.png', 0)
-    edges = cv2.Canny(temp, 1178, 1600)
-    indecies = numpy.where(temp != [0])
-    edgeCoords = list(zip(indecies[0], indecies[1]))
-    print(coords)
+    temp = cv2.imread('teest2.jpg', cv2.IMREAD_UNCHANGED)
+    blur = cv2.blur(temp, (5, 5))
+    canny = cv2.Canny(blur, 30, 150)
+    contours, _ = cv2.findContours(canny, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cv2.drawContours(canny, contours, -1, 255, 2)
+    canny = 255 - canny
+
+    cv2.imshow('Contours', canny)
+    cv2.waitKey(0)
+    cv2.imwrite('out.jpg', canny)
 
 if __name__ == "__main__":
     main()
