@@ -14,8 +14,7 @@ def main():
     cv2.drawContours(canny, contours, -1, 255, 2)
     canny = 255 - canny
 
-    cv2.imshow('Contours', canny)
-    cv2.waitKey(0)
+
     cv2.imwrite('out.jpg', canny)
 
     averages = []

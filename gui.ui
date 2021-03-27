@@ -6,74 +6,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>807</width>
+    <height>598</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="KLineEdit" name="klineedit">
+   <widget class="QPushButton" name="cTestButton">
     <property name="geometry">
      <rect>
-      <x>300</x>
+      <x>330</x>
       <y>470</y>
-      <width>111</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="maxLength">
-     <number>20</number>
-    </property>
-   </widget>
-   <widget class="KLineEdit" name="klineedit_5">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>470</y>
-      <width>41</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="maxLength">
-     <number>3</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>300</x>
-      <y>440</y>
-      <width>71</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>IP Address</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>440</y>
-      <width>31</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Port</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton">
-    <property name="geometry">
-     <rect>
-      <x>390</x>
-      <y>510</y>
       <width>121</width>
       <height>34</height>
      </rect>
@@ -82,7 +27,7 @@
      <string>Connection Test</string>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="graphicsView">
+   <widget class="QGraphicsView" name="beforeImage">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -92,7 +37,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="graphicsView_2">
+   <widget class="QGraphicsView" name="afterImage">
     <property name="geometry">
      <rect>
       <x>430</x>
@@ -102,7 +47,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_2">
+   <widget class="QPushButton" name="openButton">
     <property name="geometry">
      <rect>
       <x>110</x>
@@ -115,7 +60,7 @@
      <string>Open Image</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_3">
+   <widget class="QPushButton" name="processButton">
     <property name="geometry">
      <rect>
       <x>110</x>
@@ -154,7 +99,7 @@
      <string>Processed Image</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_4">
+   <widget class="QPushButton" name="tweakButton">
     <property name="geometry">
      <rect>
       <x>580</x>
@@ -167,7 +112,7 @@
      <string>Tweak Image</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_5">
+   <widget class="QPushButton" name="drawButton">
     <property name="geometry">
      <rect>
       <x>580</x>
@@ -180,39 +125,19 @@
      <string>Draw Image</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_6">
-    <property name="geometry">
-     <rect>
-      <x>300</x>
-      <y>510</y>
-      <width>71</width>
-      <height>34</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Connect</string>
-    </property>
-   </widget>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>807</width>
      <height>30</height>
     </rect>
    </property>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>KLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>klineedit.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
