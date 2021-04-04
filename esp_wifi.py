@@ -1,4 +1,5 @@
 import enum
+import esp_status as esp
 import socket
 import socketserver
 from typing import Tuple, List
@@ -40,12 +41,51 @@ WPOINT_Y_OFFSET = 5
 
 class HandlerEspPacket(socketserver.BaseRequestHandler):
     def handle(self):
-        self.data = self.request.recv(1024)
+        self.data = self.request.recv(1024)  # type: bytes
         print(self.data)
+
+        data_str = self.data.decode('ascii')
+        fields = data_str.split(',')
+
+        # 0     1       2         3     4              5           6         7
+        # type, dev ID, pwr good, mode, shoulder stat, elbow stat, odometer, pts left
+
+        if len(fields) == 8:
+            if fields[0] != 1:
+                print(f"Invalid packet type {fields[0]}\n")
+
+            try:
+                i_fields = [int(x) for x in fields]
+            except ValueError:
+                print(f"Non-integer value in packet\n")
+                return
+
+            if i_fields[1] not in esp.esp_dict:
+                # device needs to be initialized
+                device = esp.EspStatus(i_fields[1])
+                esp.esp_dict[i_fields[1]] = device
+
+                print(f"Found new device (id={i_fields[1]}) at {self.client_address[0]}\n")
+
+            else:
+                device = esp.esp_dict[i_fields[1]]
+                print(f"Status received from device {i_fields[1]}\n")
+
+            device.address = self.client_address[0]
+            device.power_good = bool(i_fields[2])
+            device.mode = esp.EspMode(i_fields[3])
+            device.shoulder_status = esp.DynamixelStatus(i_fields[4])
+            device.elbow_status = esp.DynamixelStatus(i_fields[5])
+            device.odometer = i_fields[6]
+            device.points_left = i_fields[7]
+
+        else:
+            print("Invalid packet received: {} fields\n".format(len(fields)))
 
 
 def init_server():
     tcp_server = socketserver.TCPServer((SERV_HOST, SERV_PORT), HandlerEspPacket)
+    print(f"Listening on port {SERV_PORT}")
     tcp_server.serve_forever()
 
 
@@ -95,3 +135,6 @@ def send_bytes(sck: socket.socket, bytes_to_send, to_send):
 
         total_sent += sent
 
+
+if __name__ == "__main__":
+    init_server()

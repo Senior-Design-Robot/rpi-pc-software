@@ -1,15 +1,16 @@
 import enum
+from typing import Dict, Optional, Tuple
 
 
 class EspSetting(enum.IntEnum):
-    SETTING_MODE = 1
-    SETTING_SPEED = 2
+    MODE = 1
+    SPEED = 2
 
 
 class EspMode(enum.IntEnum):
-    MODE_IDLE = 0
-    MODE_DRAW = 1
-    MODE_PAUSE = 2
+    IDLE = 0
+    DRAW = 1
+    PAUSE = 2
 
 
 class EspDrawSpeed(enum.IntEnum):
@@ -33,12 +34,18 @@ class DynamixelStatus(enum.IntEnum):
 
 class EspStatus:
     def __init__(self, dev_id: int):
-        self.dev_id = dev_id
+        self.__dev_id = dev_id
+        self.address = None  # type: Optional[str]
         self.power_good = False
+        self.mode = EspMode.IDLE
         self.shoulder_status = DynamixelStatus.STATUS_OK
         self.elbow_status = DynamixelStatus.STATUS_OK
         self.odometer = 0
         self.points_left = 0
 
+    @property
+    def dev_id(self) -> int:
+        return self.__dev_id
 
-esp_dict = dict()
+
+esp_dict = dict()  # type: Dict[int, EspStatus]
