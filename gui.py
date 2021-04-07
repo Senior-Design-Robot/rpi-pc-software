@@ -88,7 +88,7 @@ class Ui_MainWindow(object):
         self.processButton.setText(_translate("MainWindow", "Process Image"))
         self.drawButton.setText(_translate("MainWindow", "Draw Image"))
         self.pause_draw_button.setText(_translate("MainWindow", "Pause Drawing"))
-        self.stop_draw_button.setText(_translate("MainWindow", "Stop Drawing"))
+        self.stop_draw_button.setText(_translate("MainWindow", "Cancel Drawing"))
         self.cTestButton.setText(_translate("MainWindow", "Connection Test"))
 
 

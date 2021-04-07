@@ -23,47 +23,13 @@ class RobotGuiState(IntEnum):
     PAUSED = 4
 
 
-class SocketWrapper(QtCore.QObject):
-    def __init__(self, parent: "RobotMainWindow", socket: QtNetwork.QTcpSocket):
-        super().__init__(parent)
-        self.socket = socket
-        self.data = bytearray()
-        self.parent = parent
-
-        self.socket.readyRead.connect(self.handle_incoming_data)
-        self.socket.disconnected.connect(self.handle_socket_disconn)
-
-        if self.socket.bytesAvailable() > 0:
-            self.handle_incoming_data()
-
-    @pyqtSlot()
-    def handle_incoming_data(self):
-        new_data = self.socket.readAll()
-        self.data.extend(new_data.data())
-
-        print(f"Read {len(new_data)} from {self.socket.peerAddress().toString()}")
-
-    @pyqtSlot()
-    def handle_socket_disconn(self):
-        print(f"Connection from {self.socket.peerAddress().toString()} closed")
-
-        esp_wifi.handle_packet(self.data, self.socket.peerAddress().toString(), self.parent.esp_table)
-
-        self.parent.handle_close_connection(self)
-
-
 class RobotMainWindow(QtWidgets.QMainWindow):
     @pyqtSlot()
     def handle_new_connection(self):
         while self.server.hasPendingConnections():
             client = self.server.nextPendingConnection()
             print(f"New connection from {client.peerAddress().toString()}")
-
-            wrapper = SocketWrapper(self, client)
-            self.sockets.append(wrapper)
-
-    def handle_close_connection(self, wrapper: SocketWrapper):
-        self.sockets.remove(wrapper)
+            esp_wifi.ReceiveWrapper(self, client, self.esp_table)
 
     @pyqtSlot(int)
     def esp_status_changed(self, dev_id: int):

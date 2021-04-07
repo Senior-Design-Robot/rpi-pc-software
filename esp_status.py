@@ -78,7 +78,7 @@ class DeviceTable(QAbstractTableModel):
     device_modified = pyqtSignal(int)
 
     def __init__(self, parent):
-        super().__init__(parent)
+        QAbstractTableModel.__init__(self, parent)
         self.device_list = []  # type: List[EspStatus]
         self.device_map = {}  # type: Dict[int, EspStatus]
 
@@ -113,21 +113,25 @@ class DeviceTable(QAbstractTableModel):
                 return
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...):
-        if (orientation != Qt.Horizontal) or (role != Qt.DisplayRole):
-            return QVariant.Invalid
+        if (orientation == Qt.Vertical) and (role == Qt.DisplayRole):
+            return device_headers[section]
 
-        return device_headers[section]
+        return None
 
     def rowCount(self, parent: QModelIndex = ...) -> int:
-        return len(self.device_list)
+        return 8
 
     def columnCount(self, parent: QModelIndex = ...) -> int:
-        return n_device_col
+        return len(self.device_list)
 
     def data(self, index: QModelIndex, role: int = ...):
         if not index.isValid():
             return QVariant.Invalid
 
-        device = self.device_list[index.row()]
-        return device_columns[index.column()](device)
+        if role == Qt.DisplayRole:
+            device = self.device_list[index.column()]
+            return device_columns[index.row()](device)
+
+        else:
+            return None
 

@@ -131,6 +131,34 @@ def handle_packet(data: bytes, address: str, dev_table: esp.DeviceTable):
         print("Invalid packet received: {} fields\n".format(len(fields)))
 
 
+class ReceiveWrapper(QObject):
+    def __init__(self, parent: QObject, socket: QTcpSocket, device_table: esp.DeviceTable):
+        super().__init__(parent)
+        self.socket = socket
+        self.data = bytearray()
+        self.parent = parent
+        self.esp_table = device_table
+
+        self.socket.readyRead.connect(self.handle_incoming_data)
+        self.socket.disconnected.connect(self.handle_socket_disconn)
+
+        if self.socket.bytesAvailable() > 0:
+            self.handle_incoming_data()
+
+    @pyqtSlot()
+    def handle_incoming_data(self):
+        new_data = self.socket.readAll()
+        self.data.extend(new_data.data())
+
+        print(f"Read {len(new_data)} from {self.socket.peerAddress().toString()}")
+
+    @pyqtSlot()
+    def handle_socket_disconn(self):
+        print(f"Connection from {self.socket.peerAddress().toString()} closed")
+        handle_packet(self.data, self.socket.peerAddress().toString(), self.esp_table)
+        self.parent.handle_close_connection(self)
+
+
 def apply_header(pkt: bytearray, pkt_type: WPacketType):
     pkt[0] = 0xFF
     pkt[1] = 0xFF
