@@ -23,6 +23,9 @@ class RobotGuiState(IntEnum):
     PAUSED = 4
 
 
+MAX_IMG_SCALE = 11.0
+
+
 class RobotMainWindow(QtWidgets.QMainWindow):
     @pyqtSlot()
     def handle_new_connection(self):
@@ -54,12 +57,25 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        # setup slots
+        self.ui.openButton.clicked.connect(self.openButton_clicked)
+        self.ui.processButton.clicked.connect(self.processButton_clicked)
+        self.ui.drawButton.clicked.connect(self.drawButton_clicked)
+        self.ui.pauseButton.clicked.connect(self.pauseButton_clicked)
+        self.ui.stopButton.clicked.connect(self.stopButton_clicked)
+
+        self.ui.hScaleSpin.valueChanged.connect(self.hScaleSpin_valueChanged)
+        self.ui.vScaleSpin.valueChanged.connect(self.vScaleSpin_valueChanged)
+
         self.image_path = None
         self.contour_segments = None
         self.contour_iter_prime = None  # type: Optional[ContourIterator]
         self.contour_iter_second = None  # type: Optional[ContourIterator]
 
         self.current_state = RobotGuiState.NO_IMAGE
+
+        self.img_shape = (0, 0)
+        self.changing_scale = False
 
         self.esp_table = esp_status.DeviceTable(self)
         self.esp_table.device_modified.connect(self.esp_status_changed)
@@ -71,38 +87,53 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         self.server.newConnection.connect(self.handle_new_connection)
         self.server.listen(QtNetwork.QHostAddress.AnyIPv4, esp_wifi.SERV_PORT)
 
+        self.change_state(RobotGuiState.NO_IMAGE)
+
+    @property
+    def img_height(self):
+        return self.img_shape[0]
+
+    @property
+    def img_width(self):
+        return self.img_shape[1]
+
     def change_state(self, new_state: RobotGuiState):
         self.current_state = new_state
 
         if new_state == RobotGuiState.NO_IMAGE:
             self.ui.processButton.setEnabled(False)
             self.ui.drawButton.setEnabled(False)
-            self.ui.pause_draw_button.setEnabled(False)
-            self.ui.stop_draw_button.setEnabled(False)
+            self.ui.pauseButton.setEnabled(False)
+            self.ui.stopButton.setEnabled(False)
+            self.ui.drawScaleGroup.setEnabled(False)
 
         elif new_state == RobotGuiState.IMAGE_LOADED:
             self.ui.processButton.setEnabled(True)
             self.ui.drawButton.setEnabled(False)
-            self.ui.pause_draw_button.setEnabled(False)
-            self.ui.stop_draw_button.setEnabled(False)
+            self.ui.pauseButton.setEnabled(False)
+            self.ui.stopButton.setEnabled(False)
+            self.ui.drawScaleGroup.setEnabled(True)
 
         elif new_state == RobotGuiState.READY_TO_DRAW:
             self.ui.processButton.setEnabled(True)
             self.ui.drawButton.setEnabled(not self.esp_table.is_empty)
-            self.ui.pause_draw_button.setEnabled(False)
-            self.ui.stop_draw_button.setEnabled(False)
+            self.ui.pauseButton.setEnabled(False)
+            self.ui.stopButton.setEnabled(False)
+            self.ui.drawScaleGroup.setEnabled(True)
 
         elif new_state == RobotGuiState.DRAWING:
             self.ui.processButton.setEnabled(False)
             self.ui.drawButton.setEnabled(False)
-            self.ui.pause_draw_button.setEnabled(True)
-            self.ui.stop_draw_button.setEnabled(True)
+            self.ui.pauseButton.setEnabled(True)
+            self.ui.stopButton.setEnabled(True)
+            self.ui.drawScaleGroup.setEnabled(True)
 
         elif new_state == RobotGuiState.PAUSED:
             self.ui.processButton.setEnabled(False)
             self.ui.drawButton.setEnabled(True)
-            self.ui.pause_draw_button.setEnabled(True)
-            self.ui.stop_draw_button.setEnabled(True)
+            self.ui.pauseButton.setEnabled(True)
+            self.ui.stopButton.setEnabled(True)
+            self.ui.drawScaleGroup.setEnabled(True)
 
     def drawing_finished(self):
         if self.contour_iter_prime:
@@ -114,14 +145,13 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         self.change_state(RobotGuiState.READY_TO_DRAW)
 
     @pyqtSlot()
-    def on_cTestButton_clicked(self):
-        print("Connection Test")
-        # TODO
-
-    @pyqtSlot()
-    def on_openButton_clicked(self):
+    def openButton_clicked(self):
         self.image_path = easygui.fileopenbox()
         pix = QtGui.QPixmap(self.image_path)
+
+        self.img_shape = (pix.size().height(), pix.size().width())
+        self.ui.imgSizeLabel.setText(f"Image Size: {self.img_width}w x {self.img_height}h")
+
         label = QtWidgets.QLabel(self.ui.beforeImage)
         label.setPixmap(pix.scaled(371, 441, QtCore.Qt.KeepAspectRatio))
         label.setScaledContents(True)
@@ -130,9 +160,10 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         self.change_state(RobotGuiState.IMAGE_LOADED)
 
     @pyqtSlot()
-    def on_processButton_clicked(self):
+    def processButton_clicked(self):
         if self.image_path is not None:
             temp = cv2.imread(self.image_path, cv2.IMREAD_UNCHANGED)
+
             blur = cv2.blur(temp, (5, 5))
             canny = cv2.Canny(blur, 30, 150)
 
@@ -154,12 +185,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             self.change_state(RobotGuiState.READY_TO_DRAW)
 
     @pyqtSlot()
-    def on_tweakButton_clicked(self):
-        print("Tweak Image")
-        # TODO
-
-    @pyqtSlot()
-    def on_drawButton_clicked(self):
+    def drawButton_clicked(self):
         print("Draw Image")
 
         if self.current_state == RobotGuiState.PAUSED:
@@ -177,18 +203,44 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         self.change_state(RobotGuiState.DRAWING)
 
     @pyqtSlot()
-    def on_pause_draw_button_clicked(self):
+    def pauseButton_clicked(self):
         for device in self.esp_table:
             esp_wifi.send_mode_change(self, device.address, EspMode.PAUSE)
 
         self.change_state(RobotGuiState.PAUSED)
 
     @pyqtSlot()
-    def on_stop_draw_button_clicked(self):
+    def stopButton_clicked(self):
         for device in self.esp_table:
             esp_wifi.send_mode_change(self, device.address, EspMode.IDLE)
 
         self.drawing_finished()
+
+    @pyqtSlot('double')
+    def hScaleSpin_valueChanged(self, d: float):
+        if not self.changing_scale:
+            self.changing_scale = True
+            new_height = d * self.img_height / self.img_width
+
+            if new_height > MAX_IMG_SCALE:
+                self.ui.hScaleSpin.setValue(MAX_IMG_SCALE * self.img_width / self.img_height)
+                new_height = MAX_IMG_SCALE
+
+            self.ui.vScaleSpin.setValue(new_height)
+            self.changing_scale = False
+
+    @pyqtSlot('double')
+    def vScaleSpin_valueChanged(self, d: float):
+        if not self.changing_scale:
+            self.changing_scale = True
+            new_width = d * self.img_width / self.img_height
+
+            if new_width > MAX_IMG_SCALE:
+                self.ui.vScaleSpin.setValue(MAX_IMG_SCALE * self.img_height / self.img_width)
+                new_width = MAX_IMG_SCALE
+
+            self.ui.hScaleSpin.setValue(new_width)
+            self.changing_scale = False
 
 
 if __name__ == "__main__":
