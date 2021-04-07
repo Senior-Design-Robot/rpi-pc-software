@@ -28,7 +28,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
     def handle_new_connection(self):
         while self.server.hasPendingConnections():
             client = self.server.nextPendingConnection()
-            print(f"New connection from {client.peerAddress().toString()}")
+            # print(f"New connection from {client.peerAddress().toString()}")
             esp_wifi.ReceiveWrapper(self, client, self.esp_table)
 
     @pyqtSlot(esp_status.EspStatus)
@@ -36,6 +36,12 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         self.change_state(self.current_state)  # refresh buttons
 
         if self.current_state == RobotGuiState.DRAWING:
+            # check if devices finished drawing
+            if device.mode == EspMode.IDLE:
+                if all([(d.mode == EspMode.IDLE) for d in self.esp_table]):
+                    self.drawing_finished()
+                    return
+
             draw_queue = self.contour_iter_prime if (device.dev_id == 1) else self.contour_iter_second
 
             if not draw_queue.is_empty:
@@ -97,6 +103,15 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             self.ui.drawButton.setEnabled(True)
             self.ui.pause_draw_button.setEnabled(True)
             self.ui.stop_draw_button.setEnabled(True)
+
+    def drawing_finished(self):
+        if self.contour_iter_prime:
+            self.contour_iter_prime.reset()
+
+        if self.contour_iter_second:
+            self.contour_iter_second.reset()
+
+        self.change_state(RobotGuiState.READY_TO_DRAW)
 
     @pyqtSlot()
     def on_cTestButton_clicked(self):
@@ -173,10 +188,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         for device in self.esp_table:
             esp_wifi.send_mode_change(self, device.address, EspMode.IDLE)
 
-        self.contour_iter_prime.reset()
-        self.contour_iter_second.reset()
-
-        self.change_state(RobotGuiState.READY_TO_DRAW)
+        self.drawing_finished()
 
 
 if __name__ == "__main__":

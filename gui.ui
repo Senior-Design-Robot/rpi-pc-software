@@ -19,18 +19,11 @@
      <layout class="QVBoxLayout" name="left_column">
       <item>
        <layout class="QGridLayout" name="image_grid">
+        <item row="1" column="0">
+         <widget class="QGraphicsView" name="beforeImage"/>
+        </item>
         <item row="1" column="1">
          <widget class="QGraphicsView" name="afterImage"/>
-        </item>
-        <item row="2" column="1">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Processed Image</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_3">
@@ -42,8 +35,85 @@
           </property>
          </widget>
         </item>
+        <item row="2" column="1">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Processed Image</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="image_scale_grid">
         <item row="1" column="0">
-         <widget class="QGraphicsView" name="beforeImage"/>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Horizontal Scale:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="h_scale_spin">
+          <property name="suffix">
+           <string notr="true"> in</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Left Offset:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QDoubleSpinBox" name="v_scale_spin">
+          <property name="suffix">
+           <string notr="true"> in</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <widget class="QDoubleSpinBox" name="h_offset_spin">
+          <property name="suffix">
+           <string notr="true"> in</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Vertical Scale:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Bottom Offset:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3">
+         <widget class="QDoubleSpinBox" name="v_offset_spin">
+          <property name="suffix">
+           <string notr="true"> in</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="orientation_combo"/>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Orientation:</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -108,7 +178,14 @@
      </layout>
     </item>
     <item>
-     <widget class="QTableView" name="esp_table_view"/>
+     <widget class="QTableView" name="esp_table_view">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

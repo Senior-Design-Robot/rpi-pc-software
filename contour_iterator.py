@@ -17,6 +17,7 @@ class ContourIterator:
         self.contour_idx = 0
         self.point_in_contour = 0
         self.moves = []
+        self.sent_end = False
 
         averages = [cv2.mean(contour) for contour in contours]
 
@@ -45,6 +46,7 @@ class ContourIterator:
     def reset(self):
         self.contour_idx = 0
         self.point_in_contour = 0
+        self.sent_end = False
 
     @property
     def current_contour(self):
@@ -63,7 +65,7 @@ class ContourIterator:
         self.point_in_contour = 0
 
     def __has_next_point(self) -> bool:
-        return (self.point_in_contour < len(self.current_contour)) or self.__has_next_contour()
+        return (self.point_in_contour < len(self.current_contour)) or self.__has_next_contour() or not self.sent_end
 
     def __dequeue_next_point(self) -> Tuple[PathElementType, float, float]:
         if self.point_in_contour < len(self.current_contour):
@@ -84,7 +86,11 @@ class ContourIterator:
 
         else:
             # nothing left to process
-            return PathElementType.END, 0, 0
+            if not self.sent_end:
+                self.sent_end = True
+                return PathElementType.END, 0, 0
+            else:
+                return PathElementType.NONE, 0, 0
 
     def get_points(self, max_count: int) -> List[Tuple[PathElementType, float, float]]:
         count = 0

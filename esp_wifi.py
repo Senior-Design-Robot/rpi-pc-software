@@ -87,8 +87,6 @@ class TransmitWrapper(QObject):
 
 
 def handle_packet(data: bytes, address: str, dev_table: esp.DeviceTable):
-    print(data)
-
     data_str = data.decode('ascii')
     fields = data_str.split(',')
 
@@ -99,11 +97,11 @@ def handle_packet(data: bytes, address: str, dev_table: esp.DeviceTable):
         try:
             i_fields = [int(x) for x in fields]
         except ValueError:
-            print(f"Non-integer value in packet\n")
+            print(f"Non-integer value in packet")
             return
 
         if i_fields[0] != 1:
-            print(f"Invalid packet type {i_fields[0]}\n")
+            print(f"Invalid packet type {i_fields[0]}")
             return
 
         device = dev_table.get_device(i_fields[1])
@@ -113,10 +111,10 @@ def handle_packet(data: bytes, address: str, dev_table: esp.DeviceTable):
             device = esp.EspStatus(i_fields[1])
             dev_table.add_device(device)
 
-            print(f"Found new device (id={i_fields[1]}) at {address}\n")
+            print(f"Found new device (id={i_fields[1]}) at {address}")
 
         else:
-            print(f"Status received from device {i_fields[1]}\n")
+            print(f"Status received from device {i_fields[1]}:\n\t{data}\n")
 
         device.address = address
         device.power_good = bool(i_fields[2])
@@ -129,7 +127,7 @@ def handle_packet(data: bytes, address: str, dev_table: esp.DeviceTable):
         dev_table.device_updated(i_fields[1])
 
     else:
-        print("Invalid packet received: {} fields\n".format(len(fields)))
+        print(f"Invalid packet received: {len(fields)} fields")
 
 
 class ReceiveWrapper(QObject):
@@ -151,11 +149,11 @@ class ReceiveWrapper(QObject):
         new_data = self.socket.readAll()
         self.data.extend(new_data.data())
 
-        print(f"Read {len(new_data)} from {self.socket.peerAddress().toString()}")
+        # print(f"Read {len(new_data)} from {self.socket.peerAddress().toString()}")
 
     @pyqtSlot()
     def handle_socket_disconn(self):
-        print(f"Connection from {self.socket.peerAddress().toString()} closed")
+        # print(f"Connection from {self.socket.peerAddress().toString()} closed")
         handle_packet(self.data, self.socket.peerAddress().toString(), self.esp_table)
 
 
@@ -196,6 +194,9 @@ def create_points_pkt(pt_list: List[Tuple[PathElementType, float, float]]) -> by
 
 
 def send_points(parent: QObject, address, points: List[Tuple[PathElementType, float, float]]):
+    for point in points:
+        print(f"Point: {point[0].name}, {point[1]}, {point[2]}")
+
     data = create_points_pkt(points)
     xmitter = TransmitWrapper(parent)
     xmitter.start_transmit(address, data)
