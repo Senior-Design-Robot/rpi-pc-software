@@ -50,6 +50,10 @@ class ContourIterator:
     def current_contour(self):
         return self.contours[self.contour_idx]
 
+    @property
+    def is_empty(self):
+        return not self.__has_next_point()
+
     def __has_next_contour(self) -> bool:
         # if there is a next move defined for current contour
         return self.contour_idx < len(self.moves)
@@ -66,16 +70,21 @@ class ContourIterator:
             # normal point
             # each contour is an array of single-element point arrays
             point = self.current_contour[self.point_in_contour][0]
+            elem_type = PathElementType.MOVE if (self.point_in_contour > 0) else PathElementType.PEN_DOWN
+
             self.point_in_contour += 1
 
-            elem_type = PathElementType.PATH_MOVE if (self.point_in_contour > 0) else PathElementType.PATH_PEN_DOWN
             return elem_type, point[0], point[1]
 
-        else:
+        elif self.__has_next_contour():
             # break to next contour
             point = self.current_contour[-1][0]
             self.__move_next_contour()
-            return PathElementType.PATH_PEN_UP, point[0], point[1]
+            return PathElementType.PEN_UP, point[0], point[1]
+
+        else:
+            # nothing left to process
+            return PathElementType.END, 0, 0
 
     def get_points(self, max_count: int) -> List[Tuple[PathElementType, float, float]]:
         count = 0

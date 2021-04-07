@@ -75,7 +75,7 @@ device_columns = [
 
 
 class DeviceTable(QAbstractTableModel):
-    device_modified = pyqtSignal(int)
+    device_modified = pyqtSignal(EspStatus)
 
     def __init__(self, parent):
         QAbstractTableModel.__init__(self, parent)
@@ -97,7 +97,7 @@ class DeviceTable(QAbstractTableModel):
         self.device_list = sorted(self.device_map.values(), key=lambda d: d.dev_id)
 
         self.layoutChanged.emit()
-        self.device_modified.emit(dev_status.dev_id)
+        self.device_modified.emit(dev_status)
 
     def get_device(self, dev_id: int) -> Optional[EspStatus]:
         if dev_id in self.device_map:
@@ -109,7 +109,7 @@ class DeviceTable(QAbstractTableModel):
         for idx, dev in enumerate(self.device_list):
             if dev_id == dev.dev_id:
                 self.dataChanged.emit(self.index(idx, 0), self.index(idx, n_device_col - 1))
-                self.device_modified.emit(dev_id)
+                self.device_modified.emit(dev)
                 return
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...):

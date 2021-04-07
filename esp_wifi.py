@@ -19,10 +19,11 @@ class WPacketType(enum.IntEnum):
 
 
 class PathElementType(enum.IntEnum):
-    PATH_NONE = 0
-    PATH_MOVE = 1
-    PATH_PEN_UP = 2
-    PATH_PEN_DOWN = 3
+    NONE = 0
+    MOVE = 1
+    PEN_UP = 2
+    PEN_DOWN = 3
+    END = 4
 
 
 class EspSetting(enum.IntEnum):
@@ -156,7 +157,6 @@ class ReceiveWrapper(QObject):
     def handle_socket_disconn(self):
         print(f"Connection from {self.socket.peerAddress().toString()} closed")
         handle_packet(self.data, self.socket.peerAddress().toString(), self.esp_table)
-        self.parent.handle_close_connection(self)
 
 
 def apply_header(pkt: bytearray, pkt_type: WPacketType):

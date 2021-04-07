@@ -31,9 +31,17 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             print(f"New connection from {client.peerAddress().toString()}")
             esp_wifi.ReceiveWrapper(self, client, self.esp_table)
 
-    @pyqtSlot(int)
-    def esp_status_changed(self, dev_id: int):
-        pass
+    @pyqtSlot(esp_status.EspStatus)
+    def esp_status_changed(self, device: esp_status.EspStatus):
+        self.change_state(self.current_state)  # refresh buttons
+
+        if self.current_state == RobotGuiState.DRAWING:
+            draw_queue = self.contour_iter_prime if (device.dev_id == 1) else self.contour_iter_second
+
+            if not draw_queue.is_empty:
+                if (esp_wifi.POINT_TARGET_FILL - device.points_left) > esp_wifi.POINT_XMIT_THRESHOLD:
+                    points = self.contour_iter_prime.get_points(esp_wifi.POINT_XMIT_THRESHOLD)
+                    esp_wifi.send_points(self, device.address, points)
 
     def __init__(self):
         super().__init__()
@@ -58,6 +66,8 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         self.server.listen(QtNetwork.QHostAddress.AnyIPv4, esp_wifi.SERV_PORT)
 
     def change_state(self, new_state: RobotGuiState):
+        self.current_state = new_state
+
         if new_state == RobotGuiState.NO_IMAGE:
             self.ui.processButton.setEnabled(False)
             self.ui.drawButton.setEnabled(False)
@@ -162,6 +172,9 @@ class RobotMainWindow(QtWidgets.QMainWindow):
     def on_stop_draw_button_clicked(self):
         for device in self.esp_table:
             esp_wifi.send_mode_change(self, device.address, EspMode.IDLE)
+
+        self.contour_iter_prime.reset()
+        self.contour_iter_second.reset()
 
         self.change_state(RobotGuiState.READY_TO_DRAW)
 
