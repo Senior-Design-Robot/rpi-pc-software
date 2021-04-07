@@ -1,8 +1,10 @@
 import enum
-import esp_status as esp
-import socket
-import socketserver
 from typing import Tuple, List
+
+from PyQt5.QtCore import pyqtSlot, QObject, Qt
+from PyQt5.QtNetwork import QTcpSocket
+
+import esp_status as esp
 
 SERV_HOST, SERV_PORT = "0.0.0.0", 1896
 ESP_PORT = 1897
@@ -23,6 +25,11 @@ class PathElementType(enum.IntEnum):
     PATH_PEN_DOWN = 3
 
 
+class EspSetting(enum.IntEnum):
+    MODE = 1
+    SPEED = 2
+
+
 WPKT_HEAD_LEN = 5
 WPKT_SETTING_LEN = (WPKT_HEAD_LEN + 2)
 WPKT_POINTS_LEN = (WPKT_HEAD_LEN + 1)
@@ -38,8 +45,47 @@ WPOINT_LEN = 9
 WPOINT_X_OFFSET = 1
 WPOINT_Y_OFFSET = 5
 
+POINT_TARGET_FILL = 31
+POINT_XMIT_THRESHOLD = 16
 
-def handle_packet(data: bytes, address: str):
+
+class TransmitWrapper(QObject):
+    @pyqtSlot()
+    def on_connected(self):
+        self.socket.write(self.data)
+
+    @pyqtSlot('qint64')
+    def on_write(self, n_bytes):
+        self.bytes_sent += n_bytes
+        print(f"{n_bytes} written to {self.socket.peerAddress().toString()}")
+
+        if self.bytes_sent >= self.send_length:
+            self.socket.close()
+            self.deleteLater()
+
+    @pyqtSlot()
+    def on_error(self):
+        print(f"Error occurred while sending data to {self.socket.peerAddress().toString()}:\
+            {self.socket.errorString()}")
+
+    def __init__(self, parent: QObject = None):
+        super().__init__(parent)
+        self.socket = QTcpSocket(self)
+        self.socket.connected.connect(self.on_connected)
+        self.socket.errorOccurred.connect(self.on_error)
+        self.socket.bytesWritten.connect(self.on_write)
+
+        self.data = None
+        self.bytes_sent = 0
+        self.send_length = 0
+
+    def start_transmit(self, address, data: bytes):
+        self.data = data
+        self.send_length = len(data)
+        self.socket.connectToHost(address, ESP_PORT)
+
+
+def handle_packet(data: bytes, address: str, dev_table: esp.DeviceTable):
     print(data)
 
     data_str = data.decode('ascii')
@@ -49,24 +95,26 @@ def handle_packet(data: bytes, address: str):
     # type, dev ID, pwr good, mode, shoulder stat, elbow stat, odometer, pts left
 
     if len(fields) == 8:
-        if fields[0] != 1:
-            print(f"Invalid packet type {fields[0]}\n")
-
         try:
             i_fields = [int(x) for x in fields]
         except ValueError:
             print(f"Non-integer value in packet\n")
             return
 
-        if i_fields[1] not in esp.esp_dict:
+        if i_fields[0] != 1:
+            print(f"Invalid packet type {i_fields[0]}\n")
+            return
+
+        device = dev_table.get_device(i_fields[1])
+
+        if device is None:
             # device needs to be initialized
             device = esp.EspStatus(i_fields[1])
-            esp.esp_dict[i_fields[1]] = device
+            dev_table.add_device(device)
 
             print(f"Found new device (id={i_fields[1]}) at {address}\n")
 
         else:
-            device = esp.esp_dict[i_fields[1]]
             print(f"Status received from device {i_fields[1]}\n")
 
         device.address = address
@@ -77,20 +125,10 @@ def handle_packet(data: bytes, address: str):
         device.odometer = i_fields[6]
         device.points_left = i_fields[7]
 
+        dev_table.device_updated(i_fields[1])
+
     else:
         print("Invalid packet received: {} fields\n".format(len(fields)))
-
-
-class HandlerEspPacket(socketserver.BaseRequestHandler):
-    def handle(self):
-        self.data = self.request.recv(1024)  # type: bytes
-        handle_packet(self.data, self.client_address[0])
-
-
-def init_server():
-    tcp_server = socketserver.TCPServer((SERV_HOST, SERV_PORT), HandlerEspPacket)
-    print(f"Listening on port {SERV_PORT}")
-    tcp_server.serve_forever()
 
 
 def apply_header(pkt: bytearray, pkt_type: WPacketType):
@@ -116,10 +154,11 @@ def create_points_pkt(pt_list: List[Tuple[PathElementType, float, float]]) -> by
     pkt = bytearray(pkt_len)
 
     apply_header(pkt, WPacketType.WPKT_POINTS)
+    pkt[WFIELD_N_PTS] = n_pts
 
     for i in range(0, n_pts):
         p_type, x, y = pt_list[i]
-        pt_offset = i * WPOINT_LEN
+        pt_offset = WFIELD_POINTS + (i * WPOINT_LEN)
 
         pkt[pt_offset] = p_type.value
         write_packet_xy(pkt, pt_offset + WPOINT_X_OFFSET, x)
@@ -128,17 +167,22 @@ def create_points_pkt(pt_list: List[Tuple[PathElementType, float, float]]) -> by
     return pkt
 
 
-def send_bytes(sck: socket.socket, bytes_to_send, to_send):
-    total_sent = 0
-
-    while total_sent < to_send:
-        sent = sck.send(bytes_to_send[total_sent:])
-        if sent == 0:
-            print("Connection broken")
-            return
-
-        total_sent += sent
+def send_points(parent: QObject, address, points: List[Tuple[PathElementType, float, float]]):
+    data = create_points_pkt(points)
+    xmitter = TransmitWrapper(parent)
+    xmitter.start_transmit(address, data)
 
 
-if __name__ == "__main__":
-    init_server()
+def create_mode_change_pkt(new_mode: esp.EspMode) -> bytes:
+    pkt = bytearray(WPKT_SETTING_LEN)
+    apply_header(pkt, WPacketType.WPKT_SETTING)
+    pkt[WFIELD_SETTING_ID] = EspSetting.MODE.value
+    pkt[WFIELD_SETTING_VAL] = new_mode.value
+
+    return pkt
+
+
+def send_mode_change(parent: QObject, address, new_mode: esp.EspMode):
+    data = create_mode_change_pkt(new_mode)
+    xmitter = TransmitWrapper(parent)
+    xmitter.start_transmit(address, data)

@@ -239,3 +239,8 @@ Thumbs.db #thumbnail cache on Windows
 
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm+all,python
+
+
+# Image files
+*.jpg
+*.png

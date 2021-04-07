@@ -64,7 +64,8 @@ class ContourIterator:
     def __dequeue_next_point(self) -> Tuple[PathElementType, float, float]:
         if self.point_in_contour < len(self.current_contour):
             # normal point
-            point = self.current_contour[self.point_in_contour]
+            # each contour is an array of single-element point arrays
+            point = self.current_contour[self.point_in_contour][0]
             self.point_in_contour += 1
 
             elem_type = PathElementType.PATH_MOVE if (self.point_in_contour > 0) else PathElementType.PATH_PEN_DOWN
@@ -72,7 +73,7 @@ class ContourIterator:
 
         else:
             # break to next contour
-            point = self.current_contour[-1]
+            point = self.current_contour[-1][0]
             self.__move_next_contour()
             return PathElementType.PATH_PEN_UP, point[0], point[1]
 
@@ -83,5 +84,6 @@ class ContourIterator:
         while (count < max_count) and self.__has_next_point():
             next_point = self.__dequeue_next_point()
             pt_list.append(next_point)
+            count += 1
 
         return pt_list

@@ -1,5 +1,7 @@
 import enum
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional
+
+from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, Qt, QVariant, QModelIndex
 
 
 class EspSetting(enum.IntEnum):
@@ -48,4 +50,84 @@ class EspStatus:
         return self.__dev_id
 
 
-esp_dict = dict()  # type: Dict[int, EspStatus]
+device_headers = [
+    "ID",
+    "Address",
+    "Power",
+    "Mode",
+    "Shoulder",
+    "Elbow",
+    "Odo",
+    "To Go"
+]
+n_device_col = len(device_headers)
+
+device_columns = [
+    lambda d: d.dev_id,
+    lambda d: d.address,
+    lambda d: d.power_good,
+    lambda d: d.mode,
+    lambda d: d.shoulder_status,
+    lambda d: d.elbow_status,
+    lambda d: d.odometer,
+    lambda d: d.points_left
+]
+
+
+class DeviceTable(QAbstractTableModel):
+    device_modified = pyqtSignal(int)
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.device_list = []  # type: List[EspStatus]
+        self.device_map = {}  # type: Dict[int, EspStatus]
+
+    def __iter__(self):
+        for dev in self.device_list:
+            yield dev
+
+    @property
+    def is_empty(self):
+        return len(self.device_list) == 0
+
+    def add_device(self, dev_status: EspStatus):
+        self.layoutAboutToBeChanged.emit()
+
+        self.device_map[dev_status.dev_id] = dev_status
+        self.device_list = sorted(self.device_map.values(), key=lambda d: d.dev_id)
+
+        self.layoutChanged.emit()
+        self.device_modified.emit(dev_status.dev_id)
+
+    def get_device(self, dev_id: int) -> Optional[EspStatus]:
+        if dev_id in self.device_map:
+            return self.device_map[dev_id]
+        else:
+            return None
+
+    def device_updated(self, dev_id: int):
+        for idx, dev in enumerate(self.device_list):
+            if dev_id == dev.dev_id:
+                self.dataChanged.emit(self.index(idx, 0), self.index(idx, n_device_col - 1))
+                self.device_modified.emit(dev_id)
+                return
+
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...):
+        if (orientation != Qt.Horizontal) or (role != Qt.DisplayRole):
+            return QVariant.Invalid
+
+        return device_headers[section]
+
+    def rowCount(self, parent: QModelIndex = ...) -> int:
+        return len(self.device_list)
+
+    def columnCount(self, parent: QModelIndex = ...) -> int:
+        return n_device_col
+
+    def data(self, index: QModelIndex, role: int = ...):
+        if not index.isValid():
+            return QVariant.Invalid
+
+        device = self.device_list[index.row()]
+        return device_columns[index.column()](device)
+
