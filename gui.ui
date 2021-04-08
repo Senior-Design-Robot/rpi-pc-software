@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>807</width>
+    <width>1025</width>
     <height>598</height>
    </rect>
   </property>
@@ -14,117 +14,207 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="cTestButton">
-    <property name="geometry">
-     <rect>
-      <x>330</x>
-      <y>470</y>
-      <width>121</width>
-      <height>34</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Connection Test</string>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="beforeImage">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>371</width>
-      <height>441</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="afterImage">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>0</y>
-      <width>371</width>
-      <height>441</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="openButton">
-    <property name="geometry">
-     <rect>
-      <x>110</x>
-      <y>470</y>
-      <width>111</width>
-      <height>34</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Open Image</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="processButton">
-    <property name="geometry">
-     <rect>
-      <x>110</x>
-      <y>510</y>
-      <width>111</width>
-      <height>34</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Process Image</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_3">
-    <property name="geometry">
-     <rect>
-      <x>120</x>
-      <y>440</y>
-      <width>101</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Original Image</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_4">
-    <property name="geometry">
-     <rect>
-      <x>580</x>
-      <y>440</y>
-      <width>111</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Processed Image</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="tweakButton">
-    <property name="geometry">
-     <rect>
-      <x>580</x>
-      <y>470</y>
-      <width>101</width>
-      <height>34</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Tweak Image</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="drawButton">
-    <property name="geometry">
-     <rect>
-      <x>580</x>
-      <y>510</y>
-      <width>101</width>
-      <height>34</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Draw Image</string>
-    </property>
-   </widget>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <layout class="QVBoxLayout" name="leftColumn">
+      <item>
+       <layout class="QGridLayout" name="imageGrid">
+        <item row="1" column="0">
+         <widget class="QGraphicsView" name="beforeImage"/>
+        </item>
+        <item row="1" column="1">
+         <widget class="QGraphicsView" name="afterImage"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Original Image</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Processed Image</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="drawScaleGroup">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="title">
+         <string>Drawing Properties</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="1" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Horizontal Scale:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Left Offset:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>Bottom Offset:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QDoubleSpinBox" name="hOffsetSpin">
+           <property name="suffix">
+            <string notr="true"> in</string>
+           </property>
+           <property name="maximum">
+            <double>11.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.500000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QDoubleSpinBox" name="vOffsetSpin">
+           <property name="suffix">
+            <string notr="true"> in</string>
+           </property>
+           <property name="maximum">
+            <double>11.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.500000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QDoubleSpinBox" name="hScaleSpin">
+           <property name="suffix">
+            <string notr="true"> in</string>
+           </property>
+           <property name="maximum">
+            <double>11.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.500000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QDoubleSpinBox" name="vScaleSpin">
+           <property name="suffix">
+            <string notr="true"> in</string>
+           </property>
+           <property name="maximum">
+            <double>11.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.500000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Vertical Scale:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="imgSizeLabel">
+           <property name="text">
+            <string>Image Size: N/A</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="drawControlGroup">
+        <property name="title">
+         <string>Drawing Controls</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <widget class="QPushButton" name="openButton">
+           <property name="text">
+            <string>Open Image</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="processButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Process Image</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="drawButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Draw Image</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QPushButton" name="pauseButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Pause Drawing</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QPushButton" name="stopButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Cancel Drawing</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QTableView" name="espTableView">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
@@ -132,8 +222,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>807</width>
-     <height>30</height>
+     <width>1025</width>
+     <height>26</height>
     </rect>
    </property>
   </widget>
