@@ -79,8 +79,8 @@ class RobotMainWindow(QtWidgets.QMainWindow):
 
         self.esp_table = esp_status.DeviceTable(self)
         self.esp_table.device_modified.connect(self.esp_status_changed)
-        self.ui.esp_table_view.setModel(self.esp_table)
-        self.ui.esp_table_view.show()
+        self.ui.espTableView.setModel(self.esp_table)
+        self.ui.espTableView.show()
 
         self.sockets = []
         self.server = QtNetwork.QTcpServer(self)
