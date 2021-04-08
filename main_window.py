@@ -196,7 +196,10 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         else:
             # Start the drawing
             arm1 = self.esp_table.get_device(1)
+
+            self.contour_iter_prime.set_scale(self.img_width, self.ui.hScaleSpin.value())
             points = self.contour_iter_prime.get_points(esp_wifi.POINT_TARGET_FILL)
+
             esp_wifi.send_points(self, arm1.address, points)
             esp_wifi.send_mode_change(self, arm1.address, EspMode.DRAW)
 

@@ -10,6 +10,7 @@ SERV_HOST, SERV_PORT = "0.0.0.0", 1896
 ESP_PORT = 1897
 
 UINT32_MAX = 4294967295
+ARM_REACH = 40.0
 
 
 class WPacketType(enum.IntEnum):
@@ -167,7 +168,7 @@ def apply_header(pkt: bytearray, pkt_type: WPacketType):
 
 def write_packet_xy(pkt: bytearray, offset: int, val: float):
     # values are stored 32 bit fraction, MSB first
-    int_val = int(round(val * UINT32_MAX))
+    int_val = int(round(val * (UINT32_MAX / ARM_REACH)))
 
     for i in range(3, -1, -1):
         pkt[offset + i] = int_val & 0xFF

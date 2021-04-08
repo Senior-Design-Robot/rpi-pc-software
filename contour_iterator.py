@@ -18,6 +18,7 @@ class ContourIterator:
         self.point_in_contour = 0
         self.moves = []
         self.sent_end = False
+        self.cm_per_px = 1.0
 
         averages = [cv2.mean(contour) for contour in contours]
 
@@ -42,6 +43,10 @@ class ContourIterator:
             current_idx = min_idx
             unvisited_idx.remove(min_idx)
             self.moves.append(min_idx)
+
+    def set_scale(self, len_pixels: int, len_inches: float):
+        len_cm = len_inches * 2.54
+        self.cm_per_px = len_cm / len_pixels
 
     def reset(self):
         self.contour_idx = 0
@@ -92,12 +97,18 @@ class ContourIterator:
             else:
                 return PathElementType.NONE, 0, 0
 
+    def __scale_dim(self, x):
+        return x * self.cm_per_px
+
+    def __scale_point(self, point):
+        return point[0], self.__scale_dim(point[1]), self.__scale_dim(point[2])
+
     def get_points(self, max_count: int) -> List[Tuple[PathElementType, float, float]]:
         count = 0
         pt_list = []
 
         while (count < max_count) and self.__has_next_point():
-            next_point = self.__dequeue_next_point()
+            next_point = self.__scale_point(self.__dequeue_next_point())
             pt_list.append(next_point)
             count += 1
 
