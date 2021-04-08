@@ -5,6 +5,7 @@ from PyQt5.QtCore import pyqtSlot, QObject, Qt
 from PyQt5.QtNetwork import QTcpSocket
 
 import esp_status as esp
+from point_ops import ESPPoint
 
 SERV_HOST, SERV_PORT = "0.0.0.0", 1896
 ESP_PORT = 1897
@@ -17,14 +18,6 @@ class WPacketType(enum.IntEnum):
     WPKT_NULL = 0
     WPKT_SETTING = 1
     WPKT_POINTS = 2
-
-
-class PathElementType(enum.IntEnum):
-    NONE = 0
-    MOVE = 1
-    PEN_UP = 2
-    PEN_DOWN = 3
-    END = 4
 
 
 class EspSetting(enum.IntEnum):
@@ -175,7 +168,7 @@ def write_packet_xy(pkt: bytearray, offset: int, val: float):
         int_val >>= 8
 
 
-def create_points_pkt(pt_list: List[Tuple[PathElementType, float, float]]) -> bytes:
+def create_points_pkt(pt_list: List[ESPPoint]) -> bytes:
     n_pts = len(pt_list)
     pkt_len = WPKT_POINTS_LEN + (n_pts * WPOINT_LEN)
     pkt = bytearray(pkt_len)
@@ -194,9 +187,9 @@ def create_points_pkt(pt_list: List[Tuple[PathElementType, float, float]]) -> by
     return pkt
 
 
-def send_points(parent: QObject, address, points: List[Tuple[PathElementType, float, float]]):
+def send_points(parent: QObject, address, points: List[ESPPoint]):
     for point in points:
-        print(f"Point: {point[0].name}, {point[1]}, {point[2]}")
+        print(f"Point: {point.pt_type.name}, {point.x}, {point.y}")
 
     data = create_points_pkt(points)
     xmitter = TransmitWrapper(parent)

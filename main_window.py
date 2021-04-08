@@ -3,6 +3,7 @@ from typing import Optional, Dict
 
 import cv2
 import easygui
+import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets, QtNetwork
 from PyQt5.QtCore import pyqtSlot
 
@@ -10,7 +11,9 @@ import esp_status
 from esp_status import EspMode
 import esp_wifi
 from contour_iterator import ContourIterator
+from gcode_decode import GCodeIterator, load_gcode_commands, get_contours_from_path
 from gui import Ui_MainWindow
+from point_ops import AbstractPointIterator
 
 main_window = None  # type: Optional[QtWidgets.QMainWindow]
 
@@ -59,6 +62,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
 
         # setup slots
         self.ui.openButton.clicked.connect(self.openButton_clicked)
+        self.ui.openGcodeButton.clicked.connect(self.openGcodeButton_clicked)
         self.ui.processButton.clicked.connect(self.processButton_clicked)
         self.ui.drawButton.clicked.connect(self.drawButton_clicked)
         self.ui.pauseButton.clicked.connect(self.pauseButton_clicked)
@@ -69,8 +73,8 @@ class RobotMainWindow(QtWidgets.QMainWindow):
 
         self.image_path = None
         self.contour_segments = None
-        self.contour_iter_prime = None  # type: Optional[ContourIterator]
-        self.contour_iter_second = None  # type: Optional[ContourIterator]
+        self.contour_iter_prime = None  # type: Optional[AbstractPointIterator]
+        self.contour_iter_second = None  # type: Optional[AbstractPointIterator]
 
         self.current_state = RobotGuiState.NO_IMAGE
 
@@ -115,7 +119,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             self.ui.drawScaleGroup.setEnabled(True)
 
         elif new_state == RobotGuiState.READY_TO_DRAW:
-            self.ui.processButton.setEnabled(True)
+            self.ui.processButton.setEnabled(self.image_path is not None)
             self.ui.drawButton.setEnabled(not self.esp_table.is_empty)
             self.ui.pauseButton.setEnabled(False)
             self.ui.stopButton.setEnabled(False)
@@ -152,12 +156,36 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         self.img_shape = (pix.size().height(), pix.size().width())
         self.ui.imgSizeLabel.setText(f"Image Size: {self.img_width}w x {self.img_height}h")
 
-        label = QtWidgets.QLabel(self.ui.beforeImage)
-        label.setPixmap(pix.scaled(371, 441, QtCore.Qt.KeepAspectRatio))
-        label.setScaledContents(True)
-        label.show()
+        label = self.ui.beforeImage
+        label.setPixmap(pix.scaled(label.size(), QtCore.Qt.KeepAspectRatio))
 
         self.change_state(RobotGuiState.IMAGE_LOADED)
+
+    @pyqtSlot()
+    def openGcodeButton_clicked(self):
+        self.image_path = None
+        gcode_path = easygui.fileopenbox(title="Open GCode", filetypes=[["*.gcode", "GCode Files"]])
+
+        try:
+            commands, max_x, max_y = load_gcode_commands(gcode_path)
+            self.contour_iter_prime = GCodeIterator(commands, max_x)
+
+            self.img_shape = (max_y, max_x)
+            self.ui.imgSizeLabel.setText(f"Image Size: {self.img_width}w x {self.img_height}h")
+
+            self.contour_segments, width, height = get_contours_from_path(commands, max_x, max_y)
+            contour_img = np.full((height, width, 3), 255, np.uint8)
+            cv2.drawContours(contour_img, self.contour_segments, -1, (0, 0, 0), 5)
+            cv2.imwrite('out.png', contour_img)
+
+            q_pix = QtGui.QPixmap('out.png')
+            self.ui.afterImage.setPixmap(q_pix.scaled(self.ui.afterImage.size(), QtCore.Qt.KeepAspectRatio))
+
+            self.change_state(RobotGuiState.READY_TO_DRAW)
+
+        except FileNotFoundError:
+            easygui.msgbox("Could not open gcode file", "IO Error")
+            return
 
     @pyqtSlot()
     def processButton_clicked(self):
@@ -173,12 +201,11 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             cv2.imwrite('out.jpg', canny)
 
             pix = QtGui.QPixmap('out.jpg')
-            lable = QtWidgets.QLabel(self.ui.afterImage)
-            lable.setPixmap(pix.scaled(371, 441, QtCore.Qt.KeepAspectRatio))
-            lable.setScaledContents(True)
-            lable.show()
+            # lable = QtWidgets.QLabel(self.ui.afterImage)
+            label = self.ui.afterImage
+            label.setPixmap(pix.scaled(label.size(), QtCore.Qt.KeepAspectRatio))
 
-            self.contour_iter_prime = ContourIterator(self.contour_segments)
+            self.contour_iter_prime = ContourIterator(self.contour_segments, self.img_width)
 
             print("Process Image")
 
@@ -197,7 +224,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             # Start the drawing
             arm1 = self.esp_table.get_device(1)
 
-            self.contour_iter_prime.set_scale(self.img_width, self.ui.hScaleSpin.value())
+            self.contour_iter_prime.set_scale(self.ui.hScaleSpin.value())
             points = self.contour_iter_prime.get_points(esp_wifi.POINT_TARGET_FILL)
 
             esp_wifi.send_points(self, arm1.address, points)

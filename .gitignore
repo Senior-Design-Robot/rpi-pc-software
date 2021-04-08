@@ -244,3 +244,4 @@ Thumbs.db #thumbnail cache on Windows
 # Image files
 *.jpg
 *.png
+*.gcode

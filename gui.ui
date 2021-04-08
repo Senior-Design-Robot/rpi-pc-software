@@ -19,12 +19,6 @@
      <layout class="QVBoxLayout" name="leftColumn">
       <item>
        <layout class="QGridLayout" name="imageGrid">
-        <item row="1" column="0">
-         <widget class="QGraphicsView" name="beforeImage"/>
-        </item>
-        <item row="1" column="1">
-         <widget class="QGraphicsView" name="afterImage"/>
-        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_3">
           <property name="text">
@@ -39,6 +33,38 @@
          <widget class="QLabel" name="label_4">
           <property name="text">
            <string>Processed Image</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLabel" name="afterImage">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="beforeImage">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string/>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -155,7 +181,7 @@
          <item row="0" column="0">
           <widget class="QPushButton" name="openButton">
            <property name="text">
-            <string>Open Image</string>
+            <string>Open Image...</string>
            </property>
           </widget>
          </item>
@@ -196,6 +222,13 @@
            </property>
            <property name="text">
             <string>Cancel Drawing</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QPushButton" name="openGcodeButton">
+           <property name="text">
+            <string>Open GCode File...</string>
            </property>
           </widget>
          </item>
