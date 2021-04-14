@@ -73,6 +73,8 @@ class RobotMainWindow(QtWidgets.QMainWindow):
 
         self.image_path = None
         self.contour_segments = None
+        self.contour_segments_arm_1 = []
+        self.contour_segments_arm_2 = []
         self.contour_iter_prime = None  # type: Optional[AbstractPointIterator]
         self.contour_iter_second = None  # type: Optional[AbstractPointIterator]
 
@@ -205,7 +207,24 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             label = self.ui.afterImage
             label.setPixmap(pix.scaled(label.size(), QtCore.Qt.KeepAspectRatio))
 
-            self.contour_iter_prime = ContourIterator(self.contour_segments, self.img_width)
+            #determine which arm each contour belongs to
+            #print(np.squeeze(self.contour_segments).toList())
+            for contour in self.contour_segments:
+                above = 0
+                below = 0
+                for point in contour[0]:
+                    if point[1] >= self.img_height/2:
+                        below+=1
+                    else:
+                        above+=1
+
+                if above > len(contour)/2:
+                    self.contour_segments_arm_2.append(contour)
+                else:
+                    self.contour_segments_arm_1.append(contour)
+
+            self.contour_iter_prime = ContourIterator(self.contour_segments_arm_1, self.img_width)
+            self.contour_iter_second = ContourIterator(self.contour_segments_arm_2, self.img_width)
 
             print("Process Image")
 
