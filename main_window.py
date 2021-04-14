@@ -212,7 +212,9 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             for contour in self.contour_segments:
                 above = 0
                 below = 0
-                for point in contour[0]:
+                print(contour)
+                for point in contour:
+                    point = point[0]
                     if point[1] >= self.img_height/2:
                         below+=1
                     else:
