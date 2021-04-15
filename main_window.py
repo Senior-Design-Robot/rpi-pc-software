@@ -183,6 +183,24 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             q_pix = QtGui.QPixmap('out.png')
             self.ui.afterImage.setPixmap(q_pix.scaled(self.ui.afterImage.size(), QtCore.Qt.KeepAspectRatio))
 
+            for contour in self.contour_segments:
+                above = 0
+                below = 0
+                for point in contour:
+                    point = point[0]
+                    if point[1] >= self.img_height/2:
+                        below+=1
+                    else:
+                        above+=1
+
+                if above > len(contour)/2:
+                    self.contour_segments_arm_2.append(contour)
+                else:
+                    self.contour_segments_arm_1.append(contour)
+
+            self.contour_iter_prime = ContourIterator(self.contour_segments_arm_1, self.img_width)
+            self.contour_iter_second = ContourIterator(self.contour_segments_arm_2, self.img_width)
+
             self.change_state(RobotGuiState.READY_TO_DRAW)
 
         except FileNotFoundError:
@@ -212,7 +230,6 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             for contour in self.contour_segments:
                 above = 0
                 below = 0
-                print(contour)
                 for point in contour:
                     point = point[0]
                     if point[1] >= self.img_height/2:
@@ -248,8 +265,16 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             self.contour_iter_prime.set_scale(self.ui.hScaleSpin.value())
             points = self.contour_iter_prime.get_points(esp_wifi.POINT_TARGET_FILL)
 
+            arm2 = self.esp_table.get_device(2)
+
+            self.contour_iter_second.set_scale(self.ui.hScaleSpin.value())
+            points2 = self.contour_iter_second.get_points(esp_wifi.POINT_TARGET_FILL)
+
             esp_wifi.send_points(self, arm1.address, points)
             esp_wifi.send_mode_change(self, arm1.address, EspMode.DRAW)
+
+            esp_wifi.send_points(self, arm2.address, points2)
+            esp_wifi.send_mode_change(self, arm2.address, EspMode.DRAW)
 
         self.change_state(RobotGuiState.DRAWING)
 
