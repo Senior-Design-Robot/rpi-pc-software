@@ -5,13 +5,12 @@ from PyQt5.QtCore import pyqtSlot, QObject, Qt
 from PyQt5.QtNetwork import QTcpSocket
 
 import esp_status as esp
-from point_ops import ESPPoint
+from point_ops import ARM_REACH, ESPPoint
 
 SERV_HOST, SERV_PORT = "0.0.0.0", 1896
 ESP_PORT = 1897
 
 UINT32_MAX = 4294967295
-ARM_REACH = 40.0
 
 
 class WPacketType(enum.IntEnum):
@@ -159,7 +158,16 @@ def apply_header(pkt: bytearray, pkt_type: WPacketType):
     pkt[WFIELD_PKT_TYPE] = pkt_type.value
 
 
-def write_packet_xy(pkt: bytearray, offset: int, val: float):
+def write_packet_x(pkt: bytearray, offset: int, val: float):
+    # values are stored 32 bit fraction, MSB first
+    int_val = int(round((val + ARM_REACH) * (UINT32_MAX / (ARM_REACH * 2))))
+
+    for i in range(3, -1, -1):
+        pkt[offset + i] = int_val & 0xFF
+        int_val >>= 8
+
+
+def write_packet_y(pkt: bytearray, offset: int, val: float):
     # values are stored 32 bit fraction, MSB first
     int_val = int(round(val * (UINT32_MAX / ARM_REACH)))
 
@@ -180,9 +188,9 @@ def create_points_pkt(pt_list: List[ESPPoint]) -> bytes:
         point = pt_list[i]
         pt_offset = WFIELD_POINTS + (i * WPOINT_LEN)
 
-        pkt[pt_offset] = point.pt_type
-        write_packet_xy(pkt, pt_offset + WPOINT_X_OFFSET, point.x)
-        write_packet_xy(pkt, pt_offset + WPOINT_Y_OFFSET, point.y)
+        pkt[pt_offset] = point.pt_type.value
+        write_packet_x(pkt, pt_offset + WPOINT_X_OFFSET, point.x)
+        write_packet_y(pkt, pt_offset + WPOINT_Y_OFFSET, point.y)
 
     return pkt
 

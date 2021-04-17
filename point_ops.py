@@ -3,6 +3,8 @@ from enum import IntEnum
 from typing import List
 
 
+ARM_REACH = 40.0
+
 class PathElementType(IntEnum):
     NONE = 0
     MOVE = 1
@@ -62,8 +64,10 @@ class AbstractPointIterator(ABC):
         while (count < max_count) and self.has_next_point():
             next_point = self.dequeue_next_point()
 
-            next_point = ESPPoint(next_point.pt_type, self.field_width - next_point.x, self.field_height - next_point.y)
-            next_point = next_point.scale(self.pt_scale).offset(self.x_offset, self.y_offset)
+            next_point = ESPPoint(next_point.pt_type, next_point.x, self.field_height - next_point.y)
+            next_point = next_point.offset(-(self.field_width / 2), 0)\
+                .scale(self.pt_scale)\
+                .offset(self.x_offset, self.y_offset)
 
             pt_list.append(next_point)
             count += 1
