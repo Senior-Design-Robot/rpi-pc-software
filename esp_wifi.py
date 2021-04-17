@@ -177,12 +177,12 @@ def create_points_pkt(pt_list: List[ESPPoint]) -> bytes:
     pkt[WFIELD_N_PTS] = n_pts
 
     for i in range(0, n_pts):
-        p_type, x, y = pt_list[i]
+        point = pt_list[i]
         pt_offset = WFIELD_POINTS + (i * WPOINT_LEN)
 
-        pkt[pt_offset] = p_type.value
-        write_packet_xy(pkt, pt_offset + WPOINT_X_OFFSET, x)
-        write_packet_xy(pkt, pt_offset + WPOINT_Y_OFFSET, y)
+        pkt[pt_offset] = point.pt_type
+        write_packet_xy(pkt, pt_offset + WPOINT_X_OFFSET, point.x)
+        write_packet_xy(pkt, pt_offset + WPOINT_Y_OFFSET, point.y)
 
     return pkt
 

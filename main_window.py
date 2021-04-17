@@ -205,7 +205,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             label = self.ui.afterImage
             label.setPixmap(pix.scaled(label.size(), QtCore.Qt.KeepAspectRatio))
 
-            self.contour_iter_prime = ContourIterator(self.contour_segments, self.img_width)
+            self.contour_iter_prime = ContourIterator(self.contour_segments, self.img_width, self.img_height)
 
             print("Process Image")
 
@@ -224,7 +224,9 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             # Start the drawing
             arm1 = self.esp_table.get_device(1)
 
-            self.contour_iter_prime.set_scale(self.ui.hScaleSpin.value())
+            self.contour_iter_prime.set_scale(self.ui.hScaleSpin.value() * 2.54)
+            self.contour_iter_prime.set_offset(self.ui.hOffsetSpin.value() * 2.54, self.ui.vOffsetSpin.value() * 2.54)
+
             points = self.contour_iter_prime.get_points(esp_wifi.POINT_TARGET_FILL)
 
             esp_wifi.send_points(self, arm1.address, points)
