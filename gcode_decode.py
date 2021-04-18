@@ -7,8 +7,8 @@ from point_ops import AbstractPointIterator, ESPPoint, PathElementType
 
 
 class GCodeIterator(AbstractPointIterator):
-    def __init__(self, commands: List[ESPPoint], width_cm):
-        super().__init__(width_cm)
+    def __init__(self, commands: List[ESPPoint], width_cm, height_cm):
+        super().__init__(width_cm, height_cm)
 
         self.commands = commands
         self.command_idx = 0

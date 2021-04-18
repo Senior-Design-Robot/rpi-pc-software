@@ -168,7 +168,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
 
         try:
             commands, max_x, max_y = load_gcode_commands(gcode_path)
-            self.contour_iter_prime = GCodeIterator(commands, max_x)
+            self.contour_iter_prime = GCodeIterator(commands, max_x, max_y)
 
             self.img_shape = (max_y, max_x)
             self.ui.imgSizeLabel.setText(f"Image Size: {self.img_width}w x {self.img_height}h")
