@@ -64,7 +64,8 @@ class ContourIterator(AbstractPointIterator):
         self.point_in_contour = 0
 
     def has_next_point(self) -> bool:
-        return (self.point_in_contour < len(self.current_contour)) or self.__has_next_contour() or not self.sent_end
+        return (len(self.contours) > 0) and ((self.point_in_contour < len(self.current_contour)) or
+                                             self.__has_next_contour() or not self.sent_end)
 
     def dequeue_next_point(self) -> ESPPoint:
         if self.point_in_contour < len(self.current_contour):

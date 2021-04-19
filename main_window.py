@@ -185,23 +185,25 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             q_pix = QtGui.QPixmap('out.png')
             self.ui.afterImage.setPixmap(q_pix.scaled(self.ui.afterImage.size(), QtCore.Qt.KeepAspectRatio))
 
-            for contour in self.contour_segments:
+            for i in range(0, len(self.contour_segments)):
                 above = 0
                 below = 0
+
+                contour = self.contour_segments[i]
                 for point in contour:
                     point = point[0]
-                    if point[1] >= self.img_height/2:
-                        below+=1
+                    if point[0] < self.img_width / 2:
+                        below += 1
                     else:
-                        above+=1
+                        above += 1
 
-                if above > len(contour)/2:
+                if above > below:
                     self.contour_segments_arm_2.append(contour)
                 else:
                     self.contour_segments_arm_1.append(contour)
 
-            self.contour_iter_prime = ContourIterator(self.contour_segments_arm_1, self.img_width)
-            self.contour_iter_second = ContourIterator(self.contour_segments_arm_2, self.img_width)
+            self.contour_iter_prime = ContourIterator(self.contour_segments_arm_1, width, height)
+            self.contour_iter_second = ContourIterator(self.contour_segments_arm_2, width, height)
 
             self.change_state(RobotGuiState.READY_TO_DRAW)
 
@@ -227,25 +229,27 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             label = self.ui.afterImage
             label.setPixmap(pix.scaled(label.size(), QtCore.Qt.KeepAspectRatio))
 
-            #determine which arm each contour belongs to
-            #print(np.squeeze(self.contour_segments).toList())
-            for contour in self.contour_segments:
+            # determine which arm each contour belongs to
+            # print(np.squeeze(self.contour_segments).toList())
+            for i in range(0, len(self.contour_segments)):
                 above = 0
                 below = 0
+
+                contour = self.contour_segments[i]
                 for point in contour:
                     point = point[0]
-                    if point[1] >= self.img_height/2:
-                        below+=1
+                    if point[0] < self.img_width / 2:
+                        below += 1
                     else:
-                        above+=1
+                        above += 1
 
-                if above > len(contour)/2:
+                if above > below:
                     self.contour_segments_arm_2.append(contour)
                 else:
                     self.contour_segments_arm_1.append(contour)
 
-            self.contour_iter_prime = ContourIterator(self.contour_segments_arm_1, self.img_width)
-            self.contour_iter_second = ContourIterator(self.contour_segments_arm_2, self.img_width)
+            self.contour_iter_prime = ContourIterator(self.contour_segments_arm_1, self.img_width, self.img_height)
+            self.contour_iter_second = ContourIterator(self.contour_segments_arm_2, self.img_width, self.img_height)
 
             print("Process Image")
 
@@ -276,7 +280,8 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             # second arm
             arm2 = self.esp_table.get_device(2)
 
-            self.contour_iter_second.set_scale(self.ui.hScaleSpin.value())
+            self.contour_iter_second.set_scale(self.ui.hScaleSpin.value() * 2.54)
+            self.contour_iter_second.set_offset(self.ui.hOffsetSpin.value() * 2.54, self.ui.vOffsetSpin.value() * 2.54)
             points2 = self.contour_iter_second.get_points(esp_wifi.POINT_TARGET_FILL)
 
             esp_wifi.send_points(self, arm2.address, 1898, points2)
