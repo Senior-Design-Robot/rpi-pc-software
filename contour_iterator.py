@@ -11,8 +11,8 @@ def distance(p2, p1):
 
 
 class ContourIterator(AbstractPointIterator):
-    def __init__(self, contours, width_px):
-        super().__init__(width_px)
+    def __init__(self, contours, width_px, height_px):
+        super().__init__(width_px, height_px)
 
         # moves contains the next contour to move to from the current index
         self.contours = contours

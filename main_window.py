@@ -53,7 +53,9 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             if not draw_queue.is_empty:
                 if (esp_wifi.POINT_TARGET_FILL - device.points_left) > esp_wifi.POINT_XMIT_THRESHOLD:
                     points = self.contour_iter_prime.get_points(esp_wifi.POINT_XMIT_THRESHOLD)
-                    esp_wifi.send_points(self, device.address, points)
+
+                    port = 1897 if (device.dev_id == 1) else 1898
+                    esp_wifi.send_points(self, device.address, port, points)
 
     def __init__(self):
         super().__init__()
@@ -170,7 +172,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
 
         try:
             commands, max_x, max_y = load_gcode_commands(gcode_path)
-            self.contour_iter_prime = GCodeIterator(commands, max_x)
+            self.contour_iter_prime = GCodeIterator(commands, max_x, max_y)
 
             self.img_shape = (max_y, max_x)
             self.ui.imgSizeLabel.setText(f"Image Size: {self.img_width}w x {self.img_height}h")
@@ -256,39 +258,45 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         if self.current_state == RobotGuiState.PAUSED:
             # Resume the drawing
             for device in self.esp_table:
-                esp_wifi.send_mode_change(self, device.address, EspMode.DRAW)
+                port = 1897 if (device.dev_id == 1) else 1898
+                esp_wifi.send_mode_change(self, device.address, port, EspMode.DRAW)
 
         else:
             # Start the drawing
             arm1 = self.esp_table.get_device(1)
 
-            self.contour_iter_prime.set_scale(self.ui.hScaleSpin.value())
+            self.contour_iter_prime.set_scale(self.ui.hScaleSpin.value() * 2.54)
+            self.contour_iter_prime.set_offset(self.ui.hOffsetSpin.value() * 2.54, self.ui.vOffsetSpin.value() * 2.54)
+
             points = self.contour_iter_prime.get_points(esp_wifi.POINT_TARGET_FILL)
 
+            esp_wifi.send_points(self, arm1.address, 1897, points)
+            esp_wifi.send_mode_change(self, arm1.address, 1897, EspMode.DRAW)
+            
+            # second arm
             arm2 = self.esp_table.get_device(2)
 
             self.contour_iter_second.set_scale(self.ui.hScaleSpin.value())
             points2 = self.contour_iter_second.get_points(esp_wifi.POINT_TARGET_FILL)
 
-            esp_wifi.send_points(self, arm1.address, points)
-            esp_wifi.send_mode_change(self, arm1.address, EspMode.DRAW)
-
-            esp_wifi.send_points(self, arm2.address, points2)
-            esp_wifi.send_mode_change(self, arm2.address, EspMode.DRAW)
+            esp_wifi.send_points(self, arm2.address, 1898, points2)
+            esp_wifi.send_mode_change(self, arm2.address, 1898, EspMode.DRAW)
 
         self.change_state(RobotGuiState.DRAWING)
 
     @pyqtSlot()
     def pauseButton_clicked(self):
         for device in self.esp_table:
-            esp_wifi.send_mode_change(self, device.address, EspMode.PAUSE)
+            port = 1897 if (device.dev_id == 1) else 1898
+            esp_wifi.send_mode_change(self, device.address, port, EspMode.PAUSE)
 
         self.change_state(RobotGuiState.PAUSED)
 
     @pyqtSlot()
     def stopButton_clicked(self):
         for device in self.esp_table:
-            esp_wifi.send_mode_change(self, device.address, EspMode.IDLE)
+            port = 1897 if (device.dev_id == 1) else 1898
+            esp_wifi.send_mode_change(self, device.address, port, EspMode.IDLE)
 
         self.drawing_finished()
 

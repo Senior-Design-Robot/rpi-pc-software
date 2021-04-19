@@ -5,13 +5,12 @@ from PyQt5.QtCore import pyqtSlot, QObject, Qt
 from PyQt5.QtNetwork import QTcpSocket
 
 import esp_status as esp
-from point_ops import ESPPoint
+from point_ops import ARM_REACH, ESPPoint
 
 SERV_HOST, SERV_PORT = "0.0.0.0", 1896
 ESP_PORT = 1897
 
 UINT32_MAX = 4294967295
-ARM_REACH = 40.0
 
 
 class WPacketType(enum.IntEnum):
@@ -74,10 +73,10 @@ class TransmitWrapper(QObject):
         self.bytes_sent = 0
         self.send_length = 0
 
-    def start_transmit(self, address, data: bytes):
+    def start_transmit(self, address, port, data: bytes):
         self.data = data
         self.send_length = len(data)
-        self.socket.connectToHost(address, ESP_PORT)
+        self.socket.connectToHost(address, port)
 
 
 def handle_packet(data: bytes, address: str, dev_table: esp.DeviceTable):
@@ -159,7 +158,16 @@ def apply_header(pkt: bytearray, pkt_type: WPacketType):
     pkt[WFIELD_PKT_TYPE] = pkt_type.value
 
 
-def write_packet_xy(pkt: bytearray, offset: int, val: float):
+def write_packet_x(pkt: bytearray, offset: int, val: float):
+    # values are stored 32 bit fraction, MSB first
+    int_val = int(round((val + ARM_REACH) * (UINT32_MAX / (ARM_REACH * 2))))
+
+    for i in range(3, -1, -1):
+        pkt[offset + i] = int_val & 0xFF
+        int_val >>= 8
+
+
+def write_packet_y(pkt: bytearray, offset: int, val: float):
     # values are stored 32 bit fraction, MSB first
     int_val = int(round(val * (UINT32_MAX / ARM_REACH)))
 
@@ -177,23 +185,23 @@ def create_points_pkt(pt_list: List[ESPPoint]) -> bytes:
     pkt[WFIELD_N_PTS] = n_pts
 
     for i in range(0, n_pts):
-        p_type, x, y = pt_list[i]
+        point = pt_list[i]
         pt_offset = WFIELD_POINTS + (i * WPOINT_LEN)
 
-        pkt[pt_offset] = p_type.value
-        write_packet_xy(pkt, pt_offset + WPOINT_X_OFFSET, x)
-        write_packet_xy(pkt, pt_offset + WPOINT_Y_OFFSET, y)
+        pkt[pt_offset] = point.pt_type.value
+        write_packet_x(pkt, pt_offset + WPOINT_X_OFFSET, point.x)
+        write_packet_y(pkt, pt_offset + WPOINT_Y_OFFSET, point.y)
 
     return pkt
 
 
-def send_points(parent: QObject, address, points: List[ESPPoint]):
+def send_points(parent: QObject, address, port, points: List[ESPPoint]):
     for point in points:
         print(f"Point: {point.pt_type.name}, {point.x}, {point.y}")
 
     data = create_points_pkt(points)
     xmitter = TransmitWrapper(parent)
-    xmitter.start_transmit(address, data)
+    xmitter.start_transmit(address, port, data)
 
 
 def create_mode_change_pkt(new_mode: esp.EspMode) -> bytes:
@@ -205,7 +213,7 @@ def create_mode_change_pkt(new_mode: esp.EspMode) -> bytes:
     return pkt
 
 
-def send_mode_change(parent: QObject, address, new_mode: esp.EspMode):
+def send_mode_change(parent: QObject, address, port, new_mode: esp.EspMode):
     data = create_mode_change_pkt(new_mode)
     xmitter = TransmitWrapper(parent)
-    xmitter.start_transmit(address, data)
+    xmitter.start_transmit(address, port, data)
