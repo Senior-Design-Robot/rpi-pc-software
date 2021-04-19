@@ -138,7 +138,7 @@
             <string notr="true"> in</string>
            </property>
            <property name="maximum">
-            <double>11.000000000000000</double>
+            <double>15.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.500000000000000</double>
@@ -151,7 +151,7 @@
             <string notr="true"> in</string>
            </property>
            <property name="maximum">
-            <double>11.000000000000000</double>
+            <double>15.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.500000000000000</double>

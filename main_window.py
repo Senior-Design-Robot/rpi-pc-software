@@ -185,6 +185,9 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             q_pix = QtGui.QPixmap('out.png')
             self.ui.afterImage.setPixmap(q_pix.scaled(self.ui.afterImage.size(), QtCore.Qt.KeepAspectRatio))
 
+            self.contour_segments_arm_1.clear()
+            self.contour_segments_arm_2.clear()
+
             for i in range(0, len(self.contour_segments)):
                 above = 0
                 below = 0
@@ -192,7 +195,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
                 contour = self.contour_segments[i]
                 for point in contour:
                     point = point[0]
-                    if point[0] < self.img_width / 2:
+                    if point[0] < width / 2:
                         below += 1
                     else:
                         above += 1
