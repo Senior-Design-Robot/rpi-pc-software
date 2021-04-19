@@ -73,10 +73,10 @@ class TransmitWrapper(QObject):
         self.bytes_sent = 0
         self.send_length = 0
 
-    def start_transmit(self, address, data: bytes):
+    def start_transmit(self, address, port, data: bytes):
         self.data = data
         self.send_length = len(data)
-        self.socket.connectToHost(address, ESP_PORT)
+        self.socket.connectToHost(address, port)
 
 
 def handle_packet(data: bytes, address: str, dev_table: esp.DeviceTable):
@@ -195,13 +195,13 @@ def create_points_pkt(pt_list: List[ESPPoint]) -> bytes:
     return pkt
 
 
-def send_points(parent: QObject, address, points: List[ESPPoint]):
+def send_points(parent: QObject, address, port, points: List[ESPPoint]):
     for point in points:
         print(f"Point: {point.pt_type.name}, {point.x}, {point.y}")
 
     data = create_points_pkt(points)
     xmitter = TransmitWrapper(parent)
-    xmitter.start_transmit(address, data)
+    xmitter.start_transmit(address, port, data)
 
 
 def create_mode_change_pkt(new_mode: esp.EspMode) -> bytes:
@@ -213,7 +213,7 @@ def create_mode_change_pkt(new_mode: esp.EspMode) -> bytes:
     return pkt
 
 
-def send_mode_change(parent: QObject, address, new_mode: esp.EspMode):
+def send_mode_change(parent: QObject, address, port, new_mode: esp.EspMode):
     data = create_mode_change_pkt(new_mode)
     xmitter = TransmitWrapper(parent)
-    xmitter.start_transmit(address, data)
+    xmitter.start_transmit(address, port, data)

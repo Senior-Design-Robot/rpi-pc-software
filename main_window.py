@@ -53,7 +53,9 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             if not draw_queue.is_empty:
                 if (esp_wifi.POINT_TARGET_FILL - device.points_left) > esp_wifi.POINT_XMIT_THRESHOLD:
                     points = self.contour_iter_prime.get_points(esp_wifi.POINT_XMIT_THRESHOLD)
-                    esp_wifi.send_points(self, device.address, points)
+
+                    port = 1897 if (device.dev_id == 1) else 1898
+                    esp_wifi.send_points(self, device.address, port, points)
 
     def __init__(self):
         super().__init__()
@@ -218,7 +220,8 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         if self.current_state == RobotGuiState.PAUSED:
             # Resume the drawing
             for device in self.esp_table:
-                esp_wifi.send_mode_change(self, device.address, EspMode.DRAW)
+                port = 1897 if (device.dev_id == 1) else 1898
+                esp_wifi.send_mode_change(self, device.address, port, EspMode.DRAW)
 
         else:
             # Start the drawing
@@ -229,22 +232,25 @@ class RobotMainWindow(QtWidgets.QMainWindow):
 
             points = self.contour_iter_prime.get_points(esp_wifi.POINT_TARGET_FILL)
 
-            esp_wifi.send_points(self, arm1.address, points)
-            esp_wifi.send_mode_change(self, arm1.address, EspMode.DRAW)
+            port = 1897
+            esp_wifi.send_points(self, arm1.address, port, points)
+            esp_wifi.send_mode_change(self, arm1.address, port, EspMode.DRAW)
 
         self.change_state(RobotGuiState.DRAWING)
 
     @pyqtSlot()
     def pauseButton_clicked(self):
         for device in self.esp_table:
-            esp_wifi.send_mode_change(self, device.address, EspMode.PAUSE)
+            port = 1897 if (device.dev_id == 1) else 1898
+            esp_wifi.send_mode_change(self, device.address, port, EspMode.PAUSE)
 
         self.change_state(RobotGuiState.PAUSED)
 
     @pyqtSlot()
     def stopButton_clicked(self):
         for device in self.esp_table:
-            esp_wifi.send_mode_change(self, device.address, EspMode.IDLE)
+            port = 1897 if (device.dev_id == 1) else 1898
+            esp_wifi.send_mode_change(self, device.address, port, EspMode.IDLE)
 
         self.drawing_finished()
 
