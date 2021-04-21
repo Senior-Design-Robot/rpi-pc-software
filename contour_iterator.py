@@ -18,9 +18,12 @@ class ContourIterator(AbstractPointIterator):
         self.contours = contours
         self.contour_idx = 0
         self.point_in_contour = 0
-        self.moves = []
+        self.moves = [0] * len(contours)
         self.sent_end = False
         self.cm_per_px = 1.0
+
+        if len(contours) < 1:
+            return
 
         averages = [cv2.mean(contour) for contour in contours]
 
@@ -42,9 +45,11 @@ class ContourIterator(AbstractPointIterator):
                     min_idx = dest_idx
                     min_dist = tgt_distance
 
+            self.moves[current_idx] = min_idx
             current_idx = min_idx
             unvisited_idx.remove(min_idx)
-            self.moves.append(min_idx)
+
+        self.moves[current_idx] = -1
 
     def reset(self):
         self.contour_idx = 0
@@ -57,7 +62,7 @@ class ContourIterator(AbstractPointIterator):
 
     def __has_next_contour(self) -> bool:
         # if there is a next move defined for current contour
-        return self.contour_idx < len(self.moves)
+        return (self.contour_idx >= 0) and (self.moves[self.contour_idx] >= 0)
 
     def __move_next_contour(self):
         self.contour_idx = self.moves[self.contour_idx]

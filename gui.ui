@@ -181,13 +181,6 @@
          <string>Drawing Controls</string>
         </property>
         <layout class="QGridLayout" name="gridLayout">
-         <item row="0" column="0">
-          <widget class="QPushButton" name="openButton">
-           <property name="text">
-            <string>Open Image...</string>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <widget class="QPushButton" name="processButton">
            <property name="enabled">
@@ -198,13 +191,10 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="2">
-          <widget class="QPushButton" name="drawButton">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="openButton">
            <property name="text">
-            <string>Draw Image</string>
+            <string>Open Image...</string>
            </property>
           </widget>
          </item>
@@ -228,10 +218,41 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="drawButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Draw Image</string>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="0">
           <widget class="QPushButton" name="openGcodeButton">
            <property name="text">
             <string>Open GCode File...</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QLabel" name="elapsedTimeLabel">
+           <property name="text">
+            <string>0 min, 0 sec</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>Elapsed Time:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QCheckBox" name="singleArmCheck">
+           <property name="text">
+            <string>Single Arm Mode</string>
            </property>
           </widget>
          </item>

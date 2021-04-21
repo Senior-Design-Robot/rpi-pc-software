@@ -5,7 +5,7 @@ import cv2
 import easygui
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets, QtNetwork
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot, QTime
 
 import esp_status
 from esp_status import EspMode
@@ -48,11 +48,16 @@ class RobotMainWindow(QtWidgets.QMainWindow):
                     self.drawing_finished()
                     return
 
+            # update elapsed time
+            self.draw_complete_time = QTime.currentTime()
+            elapsed = self.draw_start_time.secsTo(self.draw_complete_time)
+            self.ui.elapsedTimeLabel.setText(f"{int(elapsed / 60)} min, {elapsed % 60} sec")
+
             draw_queue = self.contour_iter_prime if (device.dev_id == 1) else self.contour_iter_second
 
-            if not draw_queue.is_empty:
+            if draw_queue and not draw_queue.is_empty:
                 if (esp_wifi.POINT_TARGET_FILL - device.points_left) > esp_wifi.POINT_XMIT_THRESHOLD:
-                    points = self.contour_iter_prime.get_points(esp_wifi.POINT_XMIT_THRESHOLD)
+                    points = draw_queue.get_points(esp_wifi.POINT_XMIT_THRESHOLD)
 
                     port = 1897 if (device.dev_id == 1) else 1898
                     esp_wifi.send_points(self, device.address, port, points)
@@ -72,6 +77,7 @@ class RobotMainWindow(QtWidgets.QMainWindow):
 
         self.ui.hScaleSpin.valueChanged.connect(self.hScaleSpin_valueChanged)
         self.ui.vScaleSpin.valueChanged.connect(self.vScaleSpin_valueChanged)
+        self.ui.singleArmCheck.stateChanged.connect(self.singleArmCheck_stateChanged)
 
         self.image_path = None
         self.contour_segments = None
@@ -79,8 +85,11 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         self.contour_segments_arm_2 = []
         self.contour_iter_prime = None  # type: Optional[AbstractPointIterator]
         self.contour_iter_second = None  # type: Optional[AbstractPointIterator]
+        self.draw_start_time = QTime.currentTime()
+        self.draw_complete_time = self.draw_start_time
 
         self.current_state = RobotGuiState.NO_IMAGE
+        self.single_arm = False
 
         self.img_shape = (0, 0)
         self.changing_scale = False
@@ -144,6 +153,10 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             self.ui.drawScaleGroup.setEnabled(True)
 
     def drawing_finished(self):
+        self.draw_complete_time = QTime.currentTime()
+        elapsed = self.draw_start_time.secsTo(self.draw_complete_time)
+        self.ui.elapsedTimeLabel.setText(f"{int(elapsed / 60)} min, {elapsed % 60} sec")
+
         if self.contour_iter_prime:
             self.contour_iter_prime.reset()
 
@@ -188,6 +201,12 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             self.contour_segments_arm_1.clear()
             self.contour_segments_arm_2.clear()
 
+            if self.single_arm:
+                self.contour_iter_prime = ContourIterator(self.contour_segments, width, height)
+                self.contour_iter_second = None
+                self.change_state(RobotGuiState.READY_TO_DRAW)
+                return
+
             for i in range(0, len(self.contour_segments)):
                 above = 0
                 below = 0
@@ -217,6 +236,9 @@ class RobotMainWindow(QtWidgets.QMainWindow):
     @pyqtSlot()
     def processButton_clicked(self):
         if self.image_path is not None:
+
+            print("Process Image")
+
             temp = cv2.imread(self.image_path, cv2.IMREAD_UNCHANGED)
 
             blur = cv2.blur(temp, (5, 5))
@@ -231,6 +253,15 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             # lable = QtWidgets.QLabel(self.ui.afterImage)
             label = self.ui.afterImage
             label.setPixmap(pix.scaled(label.size(), QtCore.Qt.KeepAspectRatio))
+
+            self.contour_segments_arm_1.clear()
+            self.contour_segments_arm_2.clear()
+
+            if self.single_arm:
+                self.contour_iter_prime = ContourIterator(self.contour_segments, self.img_width, self.img_height)
+                self.contour_iter_second = None
+                self.change_state(RobotGuiState.READY_TO_DRAW)
+                return
 
             # determine which arm each contour belongs to
             # print(np.squeeze(self.contour_segments).toList())
@@ -254,8 +285,6 @@ class RobotMainWindow(QtWidgets.QMainWindow):
             self.contour_iter_prime = ContourIterator(self.contour_segments_arm_1, self.img_width, self.img_height)
             self.contour_iter_second = ContourIterator(self.contour_segments_arm_2, self.img_width, self.img_height)
 
-            print("Process Image")
-
             self.change_state(RobotGuiState.READY_TO_DRAW)
 
     @pyqtSlot()
@@ -265,30 +294,36 @@ class RobotMainWindow(QtWidgets.QMainWindow):
         if self.current_state == RobotGuiState.PAUSED:
             # Resume the drawing
             for device in self.esp_table:
-                port = 1897 if (device.dev_id == 1) else 1898
-                esp_wifi.send_mode_change(self, device.address, port, EspMode.DRAW)
+                if device.mode == EspMode.PAUSE:
+                    port = 1897 if (device.dev_id == 1) else 1898
+                    esp_wifi.send_mode_change(self, device.address, port, EspMode.DRAW)
 
         else:
             # Start the drawing
-            arm1 = self.esp_table.get_device(1)
+            self.draw_start_time = QTime.currentTime()
 
-            self.contour_iter_prime.set_scale(self.ui.hScaleSpin.value() * 2.54)
-            self.contour_iter_prime.set_offset(self.ui.hOffsetSpin.value() * 2.54, self.ui.vOffsetSpin.value() * 2.54)
+            if self.contour_iter_prime:
+                arm1 = self.esp_table.get_device(1)
 
-            points = self.contour_iter_prime.get_points(esp_wifi.POINT_TARGET_FILL)
+                self.contour_iter_prime.set_scale(self.ui.hScaleSpin.value() * 2.54)
+                self.contour_iter_prime.set_offset(self.ui.hOffsetSpin.value() * 2.54, self.ui.vOffsetSpin.value() * 2.54)
+                points = self.contour_iter_prime.get_points(esp_wifi.POINT_TARGET_FILL)
 
-            esp_wifi.send_points(self, arm1.address, 1897, points)
-            esp_wifi.send_mode_change(self, arm1.address, 1897, EspMode.DRAW)
+                if len(points) > 0:
+                    esp_wifi.send_points(self, arm1.address, 1897, points)
+                    esp_wifi.send_mode_change(self, arm1.address, 1897, EspMode.DRAW)
             
             # second arm
-            arm2 = self.esp_table.get_device(2)
+            if not self.single_arm and self.contour_iter_second:
+                arm2 = self.esp_table.get_device(2)
 
-            self.contour_iter_second.set_scale(self.ui.hScaleSpin.value() * 2.54)
-            self.contour_iter_second.set_offset(self.ui.hOffsetSpin.value() * 2.54, self.ui.vOffsetSpin.value() * 2.54)
-            points2 = self.contour_iter_second.get_points(esp_wifi.POINT_TARGET_FILL)
+                self.contour_iter_second.set_scale(self.ui.hScaleSpin.value() * 2.54)
+                self.contour_iter_second.set_offset(self.ui.hOffsetSpin.value() * 2.54, self.ui.vOffsetSpin.value() * 2.54)
+                points2 = self.contour_iter_second.get_points(esp_wifi.POINT_TARGET_FILL)
 
-            esp_wifi.send_points(self, arm2.address, 1898, points2)
-            esp_wifi.send_mode_change(self, arm2.address, 1898, EspMode.DRAW)
+                if len(points2) > 0:
+                    esp_wifi.send_points(self, arm2.address, 1898, points2)
+                    esp_wifi.send_mode_change(self, arm2.address, 1898, EspMode.DRAW)
 
         self.change_state(RobotGuiState.DRAWING)
 
@@ -333,6 +368,12 @@ class RobotMainWindow(QtWidgets.QMainWindow):
 
             self.ui.hScaleSpin.setValue(new_width)
             self.changing_scale = False
+
+    @pyqtSlot('int')
+    def singleArmCheck_stateChanged(self, state: int):
+        self.single_arm = self.ui.singleArmCheck.isChecked()
+        self.change_state(RobotGuiState.NO_IMAGE)
+        self.ui.afterImage.clear()
 
 
 if __name__ == "__main__":
